@@ -22,7 +22,7 @@ dependencies:
   shared_preferences: ^2.2.2  
   intl: ^0.18.1
   image_picker: ^0.8.4+4
-  flutter_local_notifications: ^9.1.5
+  # flutter_local_notifications: ^15.0.0 # (или более поздняя версия, если доступна)
   # maps google
   google_maps_flutter: ^2.5.0
   location: ^5.0.3

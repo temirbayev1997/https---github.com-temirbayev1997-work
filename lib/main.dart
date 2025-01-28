@@ -1,21 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:work_kursovaya/screens/auth/login_screen.dart';
 import 'services/auth_service.dart';
 import 'services/cart_service.dart';
-import 'services/notification_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/cart_screen.dart';
+import 'screens/schedule_screen.dart';
+import 'providers/booking_provider.dart';
+
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-
+  // if (!kIsWeb && !Platform.isWindows) 
+  {
+    await Firebase.initializeApp();
+  }
 
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => BookingProvider()),
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => CartService()),
       ],
@@ -31,7 +39,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Аренда спортивного инвентаря',
+      title: 'Бронирования фитнес-залов и тренировок.',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
@@ -47,10 +55,11 @@ class MyApp extends StatelessWidget {
       },
       initialRoute: '/login',
       routes: {
-        '/login': (context) => LoginScreen(),
+               '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
         '/home': (context) => HomeScreen(),
         '/cart': (context) => CartScreen(),
+        '/schedule': (context) => ScheduleScreen(),
       },
     );
   }

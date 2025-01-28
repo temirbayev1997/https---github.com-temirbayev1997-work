@@ -1,37 +1,39 @@
 import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class AuthService extends ChangeNotifier {
-  bool _isAuthenticated = false;
-  String? _currentUser;
+class AuthService with ChangeNotifier {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  bool get isAuthenticated => _isAuthenticated;
-  String? get currentUser => _currentUser;
+  User? get currentUser => _auth.currentUser;
 
-  Future<bool> signIn(String email, String password) async {
-    // Имитация проверки
-    if (email.isNotEmpty && password.isNotEmpty) {
-      _isAuthenticated = true;
-      _currentUser = email;
+  Future<UserCredential> signIn(String email, String password) async {
+    try {
+      final result = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
       notifyListeners();
-      return true;
+      return result;
+    } catch (e) {
+      throw Exception('Ошибка входа: $e');
     }
-    return false;
   }
 
-  Future<bool> signUp(String email, String password) async {
-    // Имитация регистрации
-    if (email.isNotEmpty && password.isNotEmpty) {
-      _isAuthenticated = true;
-      _currentUser = email;
+  Future<UserCredential> register(String email, String password) async {
+    try {
+      final result = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
       notifyListeners();
-      return true;
+      return result;
+    } catch (e) {
+      throw Exception('Ошибка регистрации: $e');
     }
-    return false;
   }
 
-  void signOut() {
-    _isAuthenticated = false;
-    _currentUser = null;
+  Future<void> signOut() async {
+    await _auth.signOut();
     notifyListeners();
   }
 }

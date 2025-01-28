@@ -8,17 +8,15 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Регистрация'),
-      ),
+      appBar: AppBar(title: Text('Регистрация')),
       body: Padding(
         padding: EdgeInsets.all(16.0),
         child: Form(
@@ -28,39 +26,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
             children: [
               TextFormField(
                 controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: InputDecoration(labelText: 'Email'),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Пожалуйста, введите email';
+                  if (value?.isEmpty ?? true) {
+                    return 'Введите email';
                   }
                   return null;
                 },
               ),
-              SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Пароль',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: InputDecoration(labelText: 'Пароль'),
                 obscureText: true,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Пожалуйста, введите пароль';
+                  if (value?.isEmpty ?? true) {
+                    return 'Введите пароль';
                   }
                   return null;
                 },
               ),
-              SizedBox(height: 16),
               TextFormField(
                 controller: _confirmPasswordController,
-                decoration: InputDecoration(
-                  labelText: 'Подтвердите пароль',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: InputDecoration(labelText: 'Подтвердите пароль'),
                 obscureText: true,
                 validator: (value) {
                   if (value != _passwordController.text) {
@@ -69,30 +56,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   return null;
                 },
               ),
-              SizedBox(height: 24),
+              SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    final success = await context.read<AuthService>().signUp(
-                          _emailController.text,
-                          _passwordController.text,
-                        );
-                    if (success) {
+                  if (_formKey.currentState?.validate() ?? false) {
+                    try {
+                      await context.read<AuthService>().register(
+                        _emailController.text,
+                        _passwordController.text,
+                      );
                       Navigator.pushReplacementNamed(context, '/home');
-                    } else {
+                    } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Ошибка регистрации')),
+                        SnackBar(content: Text('Ошибка регистрации: $e')),
                       );
                     }
                   }
                 },
                 child: Text('Зарегистрироваться'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: Text('Уже есть аккаунт? Войти'),
               ),
             ],
           ),

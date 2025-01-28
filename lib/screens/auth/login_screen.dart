@@ -8,16 +8,14 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Вход'),
-      ),
+      appBar: AppBar(title: Text('Вход')),
       body: Padding(
         padding: EdgeInsets.all(16.0),
         child: Form(
@@ -27,45 +25,38 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               TextFormField(
                 controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: InputDecoration(labelText: 'Email'),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Пожалуйста, введите email';
+                  if (value?.isEmpty ?? true) {
+                    return 'Введите email';
                   }
                   return null;
                 },
               ),
-              SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Пароль',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: InputDecoration(labelText: 'Пароль'),
                 obscureText: true,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Пожалуйста, введите пароль';
+                  if (value?.isEmpty ?? true) {
+                    return 'Введите пароль';
                   }
                   return null;
                 },
               ),
-              SizedBox(height: 24),
+              SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    final success = await context.read<AuthService>().signIn(
-                          _emailController.text,
-                          _passwordController.text,
-                        );
-                    if (success) {
+                  if (_formKey.currentState?.validate() ?? false) {
+                    try {
+                      await context.read<AuthService>().signIn(
+                        _emailController.text,
+                        _passwordController.text,
+                      );
                       Navigator.pushReplacementNamed(context, '/home');
-                    } else {
+                    } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Ошибка входа')),
+                        SnackBar(content: Text('Ошибка входа: $e')),
                       );
                     }
                   }
@@ -76,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () {
                   Navigator.pushNamed(context, '/register');
                 },
-                child: Text('Создать аккаунт'),
+                child: Text('Регистрация'),
               ),
             ],
           ),

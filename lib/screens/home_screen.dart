@@ -7,7 +7,6 @@ import './profile_screen.dart';
 import '../models/user_loyalty.dart';
 import '../services/loyalty_service.dart';
 import '../widgets/loyalty_widget.dart';
-import '../models/category.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -32,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   List<String> categories = ['Все', 'Тяжелые Инвентарь', 'Сноуборды', 'Коньки', 'Велосипеды', 'Наборы', 'Легкая Атлетика', 'Уличный Спорт'];
   bool _isLoading = false;
   bool _hasReviewed = false;
-  List<Equipment> _favorites = [];
+  // List<Equipment> _favorites = [];
   
   DateTime? _selectedDate;
   String _selectedDeliveryType = 'pickup';
@@ -134,7 +133,7 @@ void _filterEquipment() async {
       final allEquipment = await _equipmentService.getRecommendations('user_id');
       setState(() {
         _equipment = allEquipment.where((item) => 
-          item.category == _selectedCategory).toList();
+          item == _selectedCategory).toList();
       });
     }
   } finally {

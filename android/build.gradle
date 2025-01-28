@@ -1,12 +1,30 @@
-buildscript {
-    ext.kotlin_version = '1.7.10'  // понизим версию Kotlin
+allprojects {
     repositories {
         google()
         mavenCentral()
     }
+}
 
+rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
+buildscript {
+    ext.kotlin_version = '2.1.10'
+    repositories {
+        google()
+        mavenCentral()
+    }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.0.2' // или последняя стабильная версия
+        classpath 'com.android.tools.build:gradle:7.4.2'
+        classpath 'com.google.gms:google-services:4.4.2' // Подключение Google Services
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -18,14 +36,11 @@ allprojects {
     }
 }
 
-rootProject.buildDir = '../build'
-subprojects {
-    project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
-    project.evaluationDependsOn(':app')
-}
 
-tasks.register("clean", Delete) {
-    delete rootProject.buildDir
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
 }

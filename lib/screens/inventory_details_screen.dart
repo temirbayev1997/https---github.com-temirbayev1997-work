@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/inventory_model.dart';
-import '../models/review_model.dart';
 
 class InventoryDetailsScreen extends StatefulWidget {
   final InventoryModel inventory;
@@ -101,10 +100,7 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
                       ),
                     ),
                   ),
-                  
                   SizedBox(height: 16),
-                  
-                  // Отзывы
                   // ReviewsSection(inventoryId: widget.inventory.id),
                 ],
               ),
@@ -112,25 +108,6 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
           ],
         ),
       ),
-      // bottomNavigationBar: Padding(
-      //   padding: EdgeInsets.all(16),
-      //   child: ElevatedButton(
-      //     onPressed: () {
-      //       Navigator.push(
-      //         context,
-      //         MaterialPageRoute(
-      //           builder: (context) => BookingScreen(
-      //             inventory: widget.inventory,
-      //           ),
-      //         ),
-      //       );
-      //     },
-      //     child: Text('Забронировать'),
-      //     style: ElevatedButton.styleFrom(
-      //       padding: EdgeInsets.symmetric(vertical: 16),
-      //     ),
-      //   ),
-      // ),
     );
   }
 }

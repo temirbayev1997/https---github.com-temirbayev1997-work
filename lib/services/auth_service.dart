@@ -36,4 +36,13 @@ class AuthService with ChangeNotifier {
     await _auth.signOut();
     notifyListeners();
   }
+
+  // Add this new method for password reset
+  Future<void> resetPassword(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      throw Exception('Ошибка сброса пароля: $e');
+    }
+  }
 }

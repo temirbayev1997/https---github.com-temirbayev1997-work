@@ -69,9 +69,57 @@ class _LoginScreenState extends State<LoginScreen> {
                 },
                 child: Text('Регистрация'),
               ),
+              TextButton(
+                onPressed: () {
+                  _showResetPasswordDialog(context);
+                },
+                child: Text('Забыли пароль?'),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showResetPasswordDialog(BuildContext context) {
+    final TextEditingController _resetEmailController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Сброс пароля'),
+        content: TextField(
+          controller: _resetEmailController,
+          decoration: InputDecoration(
+            labelText: 'Введите email',
+            hintText: 'example@email.com',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () async {
+              try {
+                await context.read<AuthService>().resetPassword(_resetEmailController.text);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Письмо для сброса пароля отправлено на ${_resetEmailController.text}'),
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Ошибка отправки письма для сброса пароля: $e')),
+                );
+              }
+            },
+            child: Text('Отправить'),
+          ),
+        ],
       ),
     );
   }

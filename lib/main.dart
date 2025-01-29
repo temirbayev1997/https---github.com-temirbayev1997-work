@@ -55,7 +55,7 @@ class MyApp extends StatelessWidget {
       },
       initialRoute: '/login',
       routes: {
-               '/login': (context) => LoginScreen(),
+        '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
         '/home': (context) => HomeScreen(),
         '/cart': (context) => CartScreen(),

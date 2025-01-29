@@ -6,7 +6,8 @@ class Equipment {
   final double rating;
   final int reviewCount;
   final String category;
-  final Map<String, int> rentalPrices;
+  final Map<String, double> rentalPrices;
+  final double price;
 
   Equipment({
     required this.id,
@@ -17,7 +18,22 @@ class Equipment {
     required this.reviewCount,
     required this.category,
     required this.rentalPrices,
+    required this.price,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'images': images,
+      'rating': rating,
+      'reviewCount': reviewCount,
+      'category': category,
+      'rentalPrices': rentalPrices,
+      'price': price,
+    };
+  }
 
   factory Equipment.fromJson(Map<String, dynamic> json) {
     return Equipment(
@@ -25,10 +41,13 @@ class Equipment {
       name: json['name'],
       description: json['description'],
       images: List<String>.from(json['images']),
-      rating: json['rating'].toDouble(),
+      rating: json['rating'],
       reviewCount: json['reviewCount'],
       category: json['category'],
-      rentalPrices: Map<String, int>.from(json['rentalPrices']),
+rentalPrices: json['rentalPrices'] != null
+  ? Map<String, double>.from(json['rentalPrices'])
+  : {},
+      price: json['price'],
     );
   }
 }

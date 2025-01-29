@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:work_kursovaya/services/cart_service.dart';
 import '../services/auth_service.dart';
 import '../services/equipment_service.dart';
 import '../models/equipment.dart';
@@ -19,6 +22,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   final _cardNumberController = TextEditingController();
   final _cardHolderController = TextEditingController();
   final _expiryDateController = TextEditingController();
+  final cartService = CartService();
+
   final _cvvController = TextEditingController();
   final LoyaltyService _loyaltyService = LoyaltyService();
   final _deliveryAddressController = TextEditingController();
@@ -28,7 +33,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   late TabController _tabController;
   List<Equipment> _equipment = [];
   List<Equipment> _cartItems = [];
-  List<String> categories = ['Все', 'Тяжелые Инвентарь', 'Сноуборды', 'Коньки', 'Велосипеды', 'Наборы', 'Легкая Атлетика', 'Уличный Спорт'];
   bool _isLoading = false;
   bool _hasReviewed = false;
   // List<Equipment> _favorites = [];
@@ -61,6 +65,7 @@ Future<void> _loadRecommendations() async {
     setState(() => _isLoading = false);
   }
 }
+
 
 
 
@@ -284,32 +289,11 @@ Column(
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
-          hintText: 'Поиск инвентаря...',
+          hintText: 'Поиск...',
           prefixIcon: Icon(Icons.search),
           border: OutlineInputBorder(),
         ),
         onSubmitted: (value) => _search(value),
-      ),
-    ),
-    // Добавляем категории здесь
-    SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: categories.map((category) =>
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4),
-            child: ChoiceChip( // Заменяем FilterChip на ChoiceChip
-              label: Text(category),
-              selected: _selectedCategory == category,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedCategory = selected ? category : null;
-                  _filterEquipment();
-                });
-              },
-            ),
-          ),
-        ).toList(),
       ),
     ),
 Expanded(
@@ -414,181 +398,116 @@ void _addToCart(Equipment item) {
 // Обновленный метод _showCart
 void _showCart() {
   showModalBottomSheet(
-    isScrollControlled: true, // Добавлено для предотвращения переполнения
+    isScrollControlled: true,
     context: context,
-    builder: (context) => SingleChildScrollView( // Обернуто в SingleChildScrollView
+    builder: (context) => SingleChildScrollView(
       child: Container(
         padding: EdgeInsets.all(16),
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Добавлено для предотвращения переполнения
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Корзина',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('Корзина', style: Theme.of(context).textTheme.titleLarge),
             Container(
-              height: 200, // Фиксированная высота для списка
-              child: _cartItems.isEmpty
-                  ? Center(child: Text('Корзина пуста'))
-                  : ListView.builder(
-                      itemCount: _cartItems.length,
-                      itemBuilder: (context, index) {
-                        final item = _cartItems[index];
-                        return ListTile(
-                          leading: item.images.isNotEmpty
-                              ? Image.network(
-                                  item.images.first,
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                )
-                              : Icon(Icons.sports),
-                          title: Text(item.name),
-                          subtitle: Text(_getRentalPrice(item)),
-                          trailing: IconButton(
-                            icon: Icon(Icons.remove_circle_outline),
-                            onPressed: () {
-                              setState(() {
-                                _cartItems.removeAt(index);
-                              });
-                              Navigator.pop(context);
-                              _showCart();
-                            },
-                          ),
-                        );
+              height: 200,
+              // Заменяем существующий ListView.builder на новый
+              child: ListView.builder(
+                itemCount: cartService.items.length,
+                itemBuilder: (context, index) {
+                  final item = cartService.items[index];
+                  return ListTile(
+                    title: Text(item.equipment.name),
+                    subtitle: Text('Цена: ${item.totalPrice}'),
+                    trailing: IconButton(
+                      icon: Icon(Icons.remove),
+                      onPressed: () {
+                        final currentUser = FirebaseAuth.instance.currentUser;
+                        if (currentUser != null) {
+                          cartService.removeItem(item, currentUser.uid);
+                        }
                       },
                     ),
+                  );
+                },
+              ),
             ),
             if (_cartItems.isNotEmpty) ...[
               SizedBox(height: 16),
-              // Выбор периода аренды
               DropdownButton<String>(
                 value: _selectedRentalPeriod,
                 items: [
-                  DropdownMenuItem(
-                    value: 'day',
-                    child: Text('1 день'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'week',
-                    child: Text('1 неделя'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'twoWeeks',
-                    child: Text('2 недели (скидка 40%)'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'month',
-                    child: Text('1 месяц'),
-                  ),
+                  DropdownMenuItem(value: 'day', child: Text('1 день')),
+                  DropdownMenuItem(value: 'month', child: Text('1 месяц')),
                 ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedRentalPeriod = value!;
-                  });
-                },
+                onChanged: (value) => setState(() => _selectedRentalPeriod = value!),
               ),
-              // Выбор даты
               ElevatedButton(
                 onPressed: () => _selectDate(context),
-                child: Text(_selectedDate == null 
+                child: Text(_selectedDate == null
                     ? 'Выберите дату'
                     : 'Дата: ${_selectedDate!.day}.${_selectedDate!.month}.${_selectedDate!.year}'),
               ),
-RadioListTile(
-  title: Text('Самовывоз'),
-  subtitle: Text('Улица Пушкина 25/1'),
-  value: 'pickup',
-  groupValue: _selectedDeliveryType,
-  onChanged: (value) {
-    setState(() {
-      _selectedDeliveryType = value.toString();
-    });
-  },
-),
-RadioListTile(
-  title: Text('Доставка (+1000 тг)'),
-  value: 'delivery',
-  groupValue: _selectedDeliveryType,
-  onChanged: (value) {
-    setState(() {
-      _selectedDeliveryType = value.toString();
-    });
-  },
-),
-if (_selectedDeliveryType == 'delivery')
-  Padding(
-    padding: EdgeInsets.symmetric(horizontal: 16),
-    child: TextField(
-      controller: _deliveryAddressController,
-      decoration: InputDecoration(
-        labelText: 'Адрес доставки',
-        hintText: 'Введите адрес доставки',
-      ),
-      maxLines: 2,
-    ),
-  ),
-Column(
-  children: [
-    Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16),
-      child: TextField(
-        controller: _cardNumberController,
-        decoration: InputDecoration(
-          labelText: 'Номер карты',
-          hintText: 'XXXX XXXX XXXX XXXX',
-        ),
-        keyboardType: TextInputType.number,
-        maxLength: 16,
-      ),
-    ),
-    Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16),
-      child: TextField(
-        controller: _cardHolderController,
-        decoration: InputDecoration(
-          labelText: 'Имя владельца',
-          hintText: 'IVAN IVANOV',
-        ),
-        textCapitalization: TextCapitalization.characters,
-      ),
-    ),
-    Row(
-      children: [
-        Expanded(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              controller: _expiryDateController,
-              decoration: InputDecoration(
-                labelText: 'Срок действия',
-                hintText: 'MM/YY',
+              RadioListTile(
+                value: 'delivery',
+                groupValue: _selectedDeliveryType,
+                onChanged: (value) => setState(() => _selectedDeliveryType = value.toString()),
               ),
-              keyboardType: TextInputType.number,
-              maxLength: 5,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              controller: _cvvController,
-              decoration: InputDecoration(
-                labelText: 'CVV',
-                hintText: '***',
+              if (_selectedDeliveryType == 'delivery')
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: TextField(
+                    controller: _deliveryAddressController,
+                    decoration: InputDecoration(labelText: 'Адрес доставки', hintText: 'Введите адрес'),
+                    maxLines: 2,
+                  ),
+                ),
+              Column(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: TextField(
+                      controller: _cardNumberController,
+                      decoration: InputDecoration(labelText: 'Номер карты', hintText: 'XXXX XXXX XXXX XXXX'),
+                      keyboardType: TextInputType.number,
+                      maxLength: 16,
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: TextField(
+                      controller: _cardHolderController,
+                      decoration: InputDecoration(labelText: 'Имя владельца', hintText: 'IVAN IVANOV'),
+                      textCapitalization: TextCapitalization.characters,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: TextField(
+                            controller: _expiryDateController,
+                            decoration: InputDecoration(labelText: 'Срок действия', hintText: 'MM/YY'),
+                            keyboardType: TextInputType.number,
+                            maxLength: 5,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: TextField(
+                            controller: _cvvController,
+                            decoration: InputDecoration(labelText: 'CVV', hintText: '***'),
+                            keyboardType: TextInputType.number,
+                            maxLength: 3,
+                            obscureText: true,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              keyboardType: TextInputType.number,
-              maxLength: 3,
-              obscureText: true,
-            ),
-          ),
-        ),
-      ],
-    ),
-  ],
-),
-
               Text(
                 'Итого: ${_calculateTotal()} тг',
                 style: Theme.of(context).textTheme.titleMedium,
@@ -677,7 +596,9 @@ void _sortEquipment() {
   });
 }
 
-void _processOrder() {
+
+
+Future<void> _processOrder() async {
   if (_selectedDate == null) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Пожалуйста, выберите дату')),
@@ -706,13 +627,6 @@ void _processOrder() {
     return;
   }
 
-  if (!_isValidExpiryDate(_expiryDateController.text)) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Пожалуйста, введите корректный срок действия карты')),
-    );
-    return;
-  }
-
   if (_cvvController.text.length != 3) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Пожалуйста, введите корректный CVV код')),
@@ -720,49 +634,55 @@ void _processOrder() {
     return;
   }
 
+  // Создание объекта заказа
   final order = {
-    'date': DateTime.now(),
-    'items': List<Equipment>.from(_cartItems),
+    'date': DateTime.now().toIso8601String(),
+    'items': _cartItems.map((item) => {
+          'name': item.name,
+          'price': item.price,
+          'image': item.images.isNotEmpty ? item.images.first : '',
+        }).toList(),
     'total': _calculateTotal(),
     'deliveryType': _selectedDeliveryType,
-    'deliveryAddress': _selectedDeliveryType == 'pickup' 
-        ? 'Улица Пушкина 25/1' 
+    'deliveryAddress': _selectedDeliveryType == 'pickup'
+        ? 'Улица Пушкина 25/1'
         : _deliveryAddressController.text,
     'rentalPeriod': _selectedRentalPeriod,
-    'selectedDate': _selectedDate,
+    'selectedDate': _selectedDate!.toIso8601String(),
+    'payment': {
+      'cardNumber': _cardNumberController.text,
+      'cardHolder': _cardHolderController.text,
+      'expiryDate': _expiryDateController.text,
+      'cvv': _cvvController.text,
+    },
   };
 
-  setState(() {
-    _orderHistory.add(order);
-    _cartItems.clear();
-  });
+  try {
+    // Сохранение заказа в Firestore
+    await FirebaseFirestore.instance.collection('orders').add(order);
 
-  _cardNumberController.clear();
-  _cardHolderController.clear();
-  _expiryDateController.clear();
-  _cvvController.clear();
-  _deliveryAddressController.clear();
-  _selectedDate = null;
+    // Очистка корзины
+    setState(() {
+      _cartItems.clear();
+    });
 
-  Navigator.pop(context);
-  _showOrderConfirmation();
-}
+    // Очистка полей ввода
+    _cardNumberController.clear();
+    _cardHolderController.clear();
+    _expiryDateController.clear();
+    _cvvController.clear();
+    _deliveryAddressController.clear();
+    _selectedDate = null;
 
-bool _isValidExpiryDate(String date) {
-  if (!date.contains('/') || date.length != 5) return false;
-  
-  final parts = date.split('/');
-  if (parts.length != 2) return false;
-  
-  final month = int.tryParse(parts[0]);
-  final year = int.tryParse(parts[1]);
-  
-  if (month == null || year == null) return false;
-  if (month < 1 || month > 12) return false;
-  
-  final now = DateTime.now();
-  final expiry = DateTime(2000 + year, month);
-  return expiry.isAfter(now);
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Заказ успешно оформлен!')),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Ошибка при оформлении заказа: $e')),
+    );
+  }
 }
 
 
@@ -843,7 +763,8 @@ void _showReviewDialog() {
       ],
     ),
   );
-}
+
+
 
 // В методе _showBookingDialog замените использование DeliveryType на строки:
 void _showBookingDialog(BuildContext context, DateTime date, dynamic slot) {
@@ -891,8 +812,11 @@ void _showBookingDialog(BuildContext context, DateTime date, dynamic slot) {
           child: Text('Подтвердить'),
         ),
       ],
+      
     ),
+    
   );
+  
 }
 
 
@@ -906,6 +830,7 @@ void dispose() {
   _cvvController.dispose();
   _deliveryAddressController.dispose(); // Добавлено
   super.dispose();
+}
 }
 }
 
